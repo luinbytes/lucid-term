@@ -1,0 +1,2 @@
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\publish\win-x64\LucidTerm.pdb
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\publish\win-x64\LucidTerm.exe

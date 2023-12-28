@@ -1,0 +1,17 @@
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x86\LucidTerm.exe
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x86\LucidTerm.deps.json
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x86\LucidTerm.runtimeconfig.json
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x86\LucidTerm.dll
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x86\LucidTerm.pdb
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.csproj.AssemblyReference.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.GeneratedMSBuildEditorConfig.editorconfig
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.AssemblyInfoInputs.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.AssemblyInfo.cs
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.csproj.CoreCompileInputs.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.sourcelink.json
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.dll
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\refint\LucidTerm.dll
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.pdb
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.genruntimeconfig.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\ref\LucidTerm.dll
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x86\LucidTerm.csproj.Fody.CopyLocal.cache

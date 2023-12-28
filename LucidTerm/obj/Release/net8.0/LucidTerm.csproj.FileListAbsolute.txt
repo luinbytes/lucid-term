@@ -1,0 +1,17 @@
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\LucidTerm.exe
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\LucidTerm.deps.json
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\LucidTerm.runtimeconfig.json
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\LucidTerm.dll
+B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\LucidTerm.pdb
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.csproj.AssemblyReference.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.GeneratedMSBuildEditorConfig.editorconfig
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.AssemblyInfoInputs.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.AssemblyInfo.cs
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.csproj.CoreCompileInputs.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.sourcelink.json
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.csproj.Fody.CopyLocal.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.dll
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\refint\LucidTerm.dll
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.pdb
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\LucidTerm.genruntimeconfig.cache
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\ref\LucidTerm.dll
