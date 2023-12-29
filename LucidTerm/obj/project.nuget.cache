@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "Uow++RR89AL0p2p2zgJGs03y6XLwpJIhCVAM6ydkifebVHbAqbfu6Ebk8s/avR75sXLM3g5Cybo6JLKwbTvz7g==",
+  "dgSpecHash": "BX1ZdKqI5fRaLdh73WO8yE2LL8v+0LfyaZwSDbOb67Yb6tN5A+xYtAWklfwUFiOoOP5uTUeXT+eQcwR/1CFdIg==",
   "success": true,
   "projectFilePath": "B:\\Github\\lucid-term\\LucidTerm\\LucidTerm.csproj",
   "expectedPackageFiles": [
@@ -110,7 +110,10 @@
     "C:\\Users\\Lu\\.nuget\\packages\\system.threading.tasks.extensions\\4.3.0\\system.threading.tasks.extensions.4.3.0.nupkg.sha512",
     "C:\\Users\\Lu\\.nuget\\packages\\system.threading.timer\\4.3.0\\system.threading.timer.4.3.0.nupkg.sha512",
     "C:\\Users\\Lu\\.nuget\\packages\\system.xml.readerwriter\\4.3.0\\system.xml.readerwriter.4.3.0.nupkg.sha512",
-    "C:\\Users\\Lu\\.nuget\\packages\\system.xml.xdocument\\4.3.0\\system.xml.xdocument.4.3.0.nupkg.sha512"
+    "C:\\Users\\Lu\\.nuget\\packages\\system.xml.xdocument\\4.3.0\\system.xml.xdocument.4.3.0.nupkg.sha512",
+    "C:\\Users\\Lu\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.0\\microsoft.aspnetcore.app.runtime.win-x64.8.0.0.nupkg.sha512",
+    "C:\\Users\\Lu\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.0\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.0.nupkg.sha512",
+    "C:\\Users\\Lu\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.0\\microsoft.netcore.app.runtime.win-x64.8.0.0.nupkg.sha512"
   ],
   "logs": []
 }

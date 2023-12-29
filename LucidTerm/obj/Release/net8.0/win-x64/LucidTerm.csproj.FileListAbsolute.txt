@@ -3,7 +3,6 @@ B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x64\LucidTerm.deps.json
 B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x64\LucidTerm.runtimeconfig.json
 B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x64\LucidTerm.dll
 B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x64\LucidTerm.pdb
-B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x64\Newtonsoft.Json.dll
 B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x64\Microsoft.CSharp.dll
 B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x64\Microsoft.VisualBasic.Core.dll
 B:\Github\lucid-term\LucidTerm\bin\Release\net8.0\win-x64\Microsoft.VisualBasic.dll
@@ -192,6 +191,7 @@ B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x64\LucidTerm.AssemblyInfo
 B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x64\LucidTerm.AssemblyInfo.cs
 B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x64\LucidTerm.csproj.CoreCompileInputs.cache
 B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x64\LucidTerm.sourcelink.json
+B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x64\LucidTerm.csproj.Fody.CopyLocal.cache
 B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x64\LucidTerm.csproj.CopyComplete
 B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x64\LucidTerm.dll
 B:\Github\lucid-term\LucidTerm\obj\Release\net8.0\win-x64\refint\LucidTerm.dll

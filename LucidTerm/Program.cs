@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,58 +19,41 @@ namespace CustomTerminal
         Error
     }
 
-    public class Terminal
+    public class Script
     {
-        public class Script
-        {
-            public string id { get; set; }
-            public string software { get; set; }
-            public string name { get; set; }
-            public string author { get; set; }
-            public string last_update { get; set; }
-            public string update_notes { get; set; }
-            public string script { get; set; }
-            public string core { get; set; }
-            public string forums { get; set; }
-            public string library { get; set; }
-            public List<string> team { get; set; }
-            public string last_bonus { get; set; }
-            public string elapsed { get; set; }
-        }
+        public string id { get; set; }
+        public string software { get; set; }
+        public string name { get; set; }
+        public string author { get; set; }
+        public string last_update { get; set; }
+        public string update_notes { get; set; }
 
-        public class ApiResponse
-        {
-            public List<Script> Scripts { get; set; }
-        }
+        [JsonPropertyName("script")]
+        public string scriptContent { get; set; }
 
+        public string core { get; set; }
+        public string forums { get; set; }
+        public string library { get; set; }
 
-        public class TeamConverter : JsonConverter<List<string>>
-        {
-            public override List<string> ReadJson(JsonReader reader, Type objectType, List<string> existingValue, bool hasExistingValue, JsonSerializer serializer)
-            {
-                List<string> teamList = new List<string>();
-                JToken token = JToken.Load(reader);
+        public string elapsed { get; set; }
+    }
 
-                if (token.Type == JTokenType.Array)
-                {
-                    teamList = token.ToObject<List<string>>();
-                }
-                else if (token.Type == JTokenType.Object)
-                {
-                    // Assuming the object contains keys and values, extract the values as strings
-                    var teamDict = token.ToObject<Dictionary<string, string>>();
-                    teamList = teamDict.Values.ToList();
-                }
+    public class ApiResponse
+    {
+        public string Username { get; set; }
+        public List<Script> Scripts { get; set; }
+    }
 
-                return teamList;
-            }
+    public class software
+    {
+        public string Version { get; set; }
+        public long LastUpdate { get; set; }
+        public string Elapsed { get; set; }
+        public string Name { get; set; }
+    }
 
-            public override void WriteJson(JsonWriter writer, List<string> value, JsonSerializer serializer)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
+    public static class Terminal
+    {
         public static void WriteLine(string text, SeverityLevel severity = SeverityLevel.Info)
         {
             string prefix = "[lucidTerm]";
@@ -119,7 +103,6 @@ namespace CustomTerminal
             if (!File.Exists("key.txt"))
             {
                 string userKey = "";
-
                 do
                 {
                     Terminal.WriteLine($"No key file found or invalid key format. Please enter your key in the format 'ABCD-EFGH-IJKL-MNOP'.", SeverityLevel.Error);
@@ -129,12 +112,12 @@ namespace CustomTerminal
                 } while (!IsValidKeyFormat(userKey) || !IsValidAPIKey(userKey));
 
                 apiKey = userKey; // Set the validated key to the global variable
-                File.WriteAllText("key.txt", apiKey); // For demonstration purposes, save it to file
+                File.WriteAllText("key.txt", apiKey);
                 Terminal.WriteLine($"Key saved successfully!", SeverityLevel.Success);
             }
             else
             {
-                apiKey = File.ReadAllText("key.txt"); // Read the key from file if it exists
+                apiKey = File.ReadAllText("key.txt");
                 Terminal.WriteLine($"Welcome back!", SeverityLevel.Success);
             }
 
@@ -157,7 +140,7 @@ namespace CustomTerminal
                     case "protection":
                         if (arguments.Count == 1 && int.TryParse(arguments[0], out int protectionLevel) && protectionLevel >= 0 && protectionLevel <= 4)
                         {
-                            Terminal.WriteLine(SendAPIRequest(apiKey, "setProtection", "protection", protectionLevel.ToString()), SeverityLevel.Success);
+                            Terminal.WriteLine(SendAPIRequest(apiKey, false, "setProtection", "protection", protectionLevel.ToString()), SeverityLevel.Success);
 
                         }
                         else
@@ -171,29 +154,53 @@ namespace CustomTerminal
                         if (arguments.Count == 0)
                         {
                             // Run API command for "scripts" without arguments
-                            string apiResponse = SendAPIRequest(apiKey, "getAllScripts");
-                            string activeResponse = SendAPIRequest(apiKey, "getMember", "scripts");
+                            string apiResponse = SendAPIRequest(apiKey, false, "getAllScripts");
+                            string activeResponse = SendAPIRequest(apiKey, false, "getMember", "scripts");
+                            //Terminal.WriteLine(input + apiResponse);
 
-                            if (apiResponse != null || activeResponse != null)
+                            if (apiResponse != null)
                             {
                                 // Deserialize the API response into a list of Script objects
                                 List<Script> scripts = JsonConvert.DeserializeObject<List<Script>>(apiResponse);
-                                List<Script> activeObj = JsonConvert.DeserializeObject<List<Script>>(activeResponse);
+                                ApiResponse apiResponse2 = JsonConvert.DeserializeObject<ApiResponse>(activeResponse);
+                                List<Script> activeScripts = apiResponse2.Scripts;
+
+                                // Prioritize and display active scripts first
+                                List<Script> prioritizedScripts = new List<Script>();
+
+                                // Add active scripts to the prioritized list
+                                foreach (var activeScript in activeScripts)
+                                {
+                                    Script foundScript = scripts.FirstOrDefault(s => s.id == activeScript.id);
+                                    if (foundScript != null)
+                                    {
+                                        prioritizedScripts.Add(foundScript);
+                                        scripts.Remove(foundScript); // Remove the active script from the original list
+                                    }
+                                }
+
+                                // Add remaining scripts (inactive ones) after active scripts in the prioritized list
+                                prioritizedScripts.AddRange(scripts);
 
                                 // Display the scripts in a tabulated format
-                                Terminal.WriteLine($"| {"Name",-30} | {"ID",-10} | {"Last Update",-25} | {"Author",-20} | {"Active",-7} |", SeverityLevel.Info);
-                                Terminal.WriteLine($"| {"",-30} | {"",-10} | {"",-25} | {"",-20} | {"",-7} |", SeverityLevel.Info);
+                                Console.WriteLine($"| {"Name",-30} | {"ID",-10} | {"Last Update",-25} | {"Author",-20} | {"Active",-7} |", SeverityLevel.Info);
+                                Console.WriteLine($"| {"",-30} | {"",-10} | {"",-25} | {"",-20} | {"",-7} |", SeverityLevel.Info);
 
-                                foreach (var script in scripts)
+                                foreach (var script in prioritizedScripts)
                                 {
                                     string formattedLastUpdate = DateTimeOffset.FromUnixTimeSeconds(long.Parse(script.last_update)).DateTime.ToString();
 
                                     // Check if the current script is active
-                                    bool isActive = activeObj.Any(activeScript => activeScript.id == script.id);
+                                    bool isActive = activeScripts.Any(activeScript => activeScript.id == script.id);
 
-                                    Terminal.WriteLine($"| {script.name,-30} | {script.id,-10} | {formattedLastUpdate,-25} | {script.author,-20} | {isActive,-7} |", SeverityLevel.Info);
+                                    // Truncate the script name if it exceeds 25 characters
+                                    string truncatedName = script.name.Length > 25 ? script.name.Substring(0, 22) + "..." : script.name;
+
+                                    // Displaying scripts with 'x' for active and '+' for inactive
+                                    Console.WriteLine($"| {truncatedName,-30} | {script.id,-10} | {formattedLastUpdate,-25} | {script.author,-20} | {(isActive ? "Active" : "Inactive"),-7} |", SeverityLevel.Info);
                                 }
-                                Terminal.WriteLine("|", SeverityLevel.Info);
+
+                                Console.WriteLine("|", SeverityLevel.Info);
                             }
                             else
                             {
@@ -204,7 +211,7 @@ namespace CustomTerminal
                         {
                             // Logic for when the argument is provided by the user
                             string userArg = arguments[0]; // Placeholder for user-provided argument
-                            string userApiResponse = SendAPIRequest(apiKey, "toggleScriptStatus", "id", userArg);
+                            string userApiResponse = SendAPIRequest(apiKey, false, "toggleScriptStatus", "id", userArg);
 
                             Terminal.WriteLine($"Toggling script ID: {userArg}", SeverityLevel.Warning);
                             // Add your logic using the user-provided argument here
@@ -214,6 +221,7 @@ namespace CustomTerminal
                             Terminal.WriteLine("Invalid 'scripts' command. Usage: scripts [number]", SeverityLevel.Error);
                         }
                         break;
+
 
 
 
@@ -231,17 +239,25 @@ namespace CustomTerminal
                     case "clear":
                         Terminal.ClearTerminal();
                         break;
-                    case "send":
-                        if (arguments.Count >= 2)
+
+                    case "allsoftware":
+                        string softwareResponse = SendAPIRequest(apiKey, false, "getAllSoftware");
+                        if (softwareResponse != null)
                         {
-                            SendAPIRequest(apiKey, arguments[0], arguments[1]);
+                            List<software> softwareList = JsonConvert.DeserializeObject<List<software>>(softwareResponse);
+                            // Access and work with the softwareList
+                            foreach (var software in softwareList)
+                            {
+                                Console.WriteLine($"Name: {software.Name}, Version: {software.Version}, Last Updated: {software.Elapsed}");
+                            }
                         }
                         else
                         {
-                            Terminal.WriteLine("Invalid 'send' command. Usage: send cmd");
+                            // Handle null response
+                            Terminal.WriteLine("Failed to fetch software. Check API response.", SeverityLevel.Error);
                         }
                         break;
-                    
+
                     //Cmd not found
                     default:
                         HandleCommandNotFound(command);
@@ -268,17 +284,12 @@ namespace CustomTerminal
             Terminal.WriteLine("|   |──    3 = Minimum (Usermode)", SeverityLevel.Warning);
             Terminal.WriteLine("|   └──    4 = Minimum (Kernel)", SeverityLevel.Warning);
             Terminal.WriteLine("|", SeverityLevel.Info);
-            Terminal.WriteLine("|── Misc", SeverityLevel.Info);
-            Terminal.WriteLine("|   |── help: Display available commands and descriptions", SeverityLevel.Info);
-            Terminal.WriteLine("|   |── debug: Enables verbose logging straight to the terminal", SeverityLevel.Info);
-            Terminal.WriteLine("|   |── allsoftware: Shows information on all available software", SeverityLevel.Info);
-            Terminal.WriteLine("|   |── exit: Exit the terminal", SeverityLevel.Info);
-            Terminal.WriteLine("|   └── clear: Clear the terminal", SeverityLevel.Info);
-            Terminal.WriteLine("|── API Requests", SeverityLevel.Info);
-            Terminal.WriteLine("|   └── send <cmd>: Send API request with specified command", SeverityLevel.Info);
-            Terminal.WriteLine("|       |──    The following are optional arguments", SeverityLevel.Warning);
-            Terminal.WriteLine("|       |──    Argument Name", SeverityLevel.Info);
-            Terminal.WriteLine("|       └──    Value", SeverityLevel.Info);
+            Terminal.WriteLine("└── Misc", SeverityLevel.Info);
+            Terminal.WriteLine("    |── help: Display available commands and descriptions", SeverityLevel.Info);
+            Terminal.WriteLine("    |── debug: Enables verbose logging straight to the terminal", SeverityLevel.Info);
+            Terminal.WriteLine("    |── allsoftware: Shows information on all available software", SeverityLevel.Info);
+            Terminal.WriteLine("    |── exit: Exit the terminal", SeverityLevel.Info);
+            Terminal.WriteLine("    └── clear: Clear the terminal", SeverityLevel.Info);
             // Add other available commands and descriptions here
         }
 
@@ -297,52 +308,42 @@ namespace CustomTerminal
 
         static bool IsValidAPIKey(string key)
         {
-            // API request to check if the key is valid
-            string url = $"https://constelia.ai/api.php?key={key}";
-            try
-            {
-                var request = WebRequest.Create(url);
-                request.Method = "GET";
+            // Local validation method
+            // Implement the logic to validate the API key locally
+            // ...
 
-                using (var response = request.GetResponse() as HttpWebResponse)
-                {
-                    if (response != null && response.StatusCode == HttpStatusCode.OK)
-                    {
-                        return true; // Key is valid
-                    }
-                }
-            }
-            catch (WebException ex)
-            {
-                Console.WriteLine($"API Request Error: {ex.Message}");
-            }
-
-            return false; // Key is invalid
+            return true; // Placeholder for local validation
         }
 
-        static string SendAPIRequest(string key, string cmd, string argName = null, string argVal = null)
+        static string SendAPIRequest(string key, bool beautify, string cmd, string argName = null, string argVal = null)
         {
             string url = $"https://constelia.ai/api.php?key={key}&cmd={cmd}";
 
-            if (!string.IsNullOrEmpty(argVal) || !string.IsNullOrEmpty(argName))
+            if (!string.IsNullOrEmpty(argName) && !string.IsNullOrEmpty(argVal))
             {
                 url += $"&{argName}={argVal}";
+            }
+            else if (!string.IsNullOrEmpty(argName) && string.IsNullOrEmpty(argVal))
+            {
+                url += $"&{argName}";
+            }
+
+            if (beautify)
+            {
+                url += $"&beautify";
             }
 
             try
             {
-                if (debug) 
-                { 
-                    Terminal.WriteLine($"Sending API request with following params: &cmd={cmd}, &{argName}={argVal}");
-                }
-                var request = WebRequest.Create(url);
-                request.Method = "GET";
-
-                using (var response = request.GetResponse() as HttpWebResponse)
+                if (debug)
                 {
-                    if (response != null && response.StatusCode == HttpStatusCode.OK)
+                    Terminal.WriteLine($"Sending API request: {url}", SeverityLevel.Warning);
+                }
+                using (var response = httpClient.GetAsync(url).Result)
+                {
+                    if (response.IsSuccessStatusCode)
                     {
-                        using (var streamReader = new StreamReader(response.GetResponseStream()))
+                        using (var streamReader = new StreamReader(response.Content.ReadAsStreamAsync().Result))
                         {
                             string responseData = streamReader.ReadToEnd();
                             return responseData; // Return the API response
@@ -354,14 +355,12 @@ namespace CustomTerminal
                     }
                 }
             }
-            catch (WebException ex)
+            catch (Exception ex)
             {
                 Terminal.WriteLine($"API Request Error: {ex.Message}", SeverityLevel.Error);
             }
 
             return null; // Return null in case of an error or unsuccessful request
         }
-
-
     }
 }
