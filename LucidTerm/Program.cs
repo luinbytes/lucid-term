@@ -236,6 +236,13 @@ namespace CustomTerminal
                     case "help":
                         DisplayHelp();
                         break;
+                    case "info":
+                        Terminal.WriteLine("Info (!)");
+                        Terminal.WriteLine("|", SeverityLevel.Info);
+                        Terminal.WriteLine("└── Minimum (Usermode) & Minimum (Kernel) are marked as they force the solutions to run silently.", SeverityLevel.Info);
+                        Terminal.WriteLine("    |── This means they do not show in the task bar.", SeverityLevel.Info);
+                        Terminal.WriteLine("    └── Essentially hides the solutions. Can cause issues if min-mode is chosen by accident.", SeverityLevel.Info);
+                        break;
                     case "clear":
                         Terminal.ClearTerminal();
                         break;
@@ -281,11 +288,12 @@ namespace CustomTerminal
             Terminal.WriteLine("|   |──    0 = Standard (usermode)", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    1 = IPC/Zombie", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    2 = Kernel Mode Protection", SeverityLevel.Info);
-            Terminal.WriteLine("|   |──    3 = Minimum (Usermode)", SeverityLevel.Warning);
-            Terminal.WriteLine("|   └──    4 = Minimum (Kernel)", SeverityLevel.Warning);
+            Terminal.WriteLine("|   |──    3 = Minimum (Usermode)(!)", SeverityLevel.Warning);
+            Terminal.WriteLine("|   └──    4 = Minimum (Kernel)(!)", SeverityLevel.Warning);
             Terminal.WriteLine("|", SeverityLevel.Info);
             Terminal.WriteLine("└── Misc", SeverityLevel.Info);
             Terminal.WriteLine("    |── help: Display available commands and descriptions", SeverityLevel.Info);
+            Terminal.WriteLine("    |── info: Shows info about all commands coloured in yellow(!)", SeverityLevel.Info);
             Terminal.WriteLine("    |── debug: Enables verbose logging straight to the terminal", SeverityLevel.Info);
             Terminal.WriteLine("    |── allsoftware: Shows information on all available software", SeverityLevel.Info);
             Terminal.WriteLine("    |── exit: Exit the terminal", SeverityLevel.Info);
