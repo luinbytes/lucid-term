@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static CustomTerminal.Terminal;
@@ -109,7 +113,7 @@ namespace CustomTerminal
 
                     Console.Write($"{prefix} Enter your key: ");
                     userKey = Console.ReadLine();
-                } while (!IsValidKeyFormat(userKey) || !IsValidAPIKey(userKey));
+                } while (!IsValidKeyFormat(userKey));
 
                 apiKey = userKey; // Set the validated key to the global variable
                 File.WriteAllText("key.txt", apiKey);
@@ -221,7 +225,50 @@ namespace CustomTerminal
                             Terminal.WriteLine("Invalid 'scripts' command. Usage: scripts [number]", SeverityLevel.Error);
                         }
                         break;
-
+                    case "config":
+                        Terminal.WriteLine("Config editing is still in early access.", SeverityLevel.Info);
+                        string viewConfigResponse = SendAPIRequest(apiKey, true, "getConfiguration");
+                        if (viewConfigResponse != null)
+                        {
+                            string cleanJson = RemoveHtmlTags(viewConfigResponse);
+                            Terminal.WriteLine(cleanJson, SeverityLevel.Info);
+                        }
+                        break;
+                    case "editconfig":
+                        Terminal.WriteLine("Config editing is still in early access.", SeverityLevel.Warning);
+                        string editConfigResponse = SendAPIRequest(apiKey, true, "getConfiguration");
+                        if (editConfigResponse != null)
+                        {
+                            string cleanJson = RemoveHtmlTags(editConfigResponse);
+                            File.WriteAllText("config.json", cleanJson);
+                            ExecuteCommand("cmd.exe", "/C " + "code -r config.json");
+                        }
+                        break;
+                    case "pushconfig":
+                        Terminal.WriteLine("Config editing is still in early access.", SeverityLevel.Warning);
+                        if (File.Exists("config.json")) {
+                            string pushConfigContents = File.ReadAllText("config.json");
+                            //I know this is a weird way of doing this leave me alone.
+                            //No shot im remaking my SendAPIRequest func.
+                            string encodedConfig = HttpUtility.UrlEncode(pushConfigContents);
+                            StringContent content = new StringContent($"value={encodedConfig}", Encoding.UTF8, "application/x-www-form-urlencoded");
+                            HttpClient client = new HttpClient();
+                            if (debug)
+                            {
+                                Terminal.WriteLine($"Sending API request: https://constelia.ai/api.php?key={apiKey}&cmd=setConfiguration", SeverityLevel.Info);
+                            }
+                            HttpResponseMessage response = await client.PostAsync($"https://constelia.ai/api.php?key={apiKey}&cmd=setConfiguration", content);
+                            if (response.StatusCode == HttpStatusCode.OK)
+                            {
+                                Terminal.WriteLine("Config pushed to cloud.", SeverityLevel.Success);
+                            }
+                            File.Delete("config.json");
+                            if (debug)
+                            {
+                                Terminal.WriteLine("Removed old config.json", SeverityLevel.Success);
+                            }
+                        }
+                        break;
 
 
 
@@ -239,9 +286,11 @@ namespace CustomTerminal
                     case "info":
                         Terminal.WriteLine("Info (!)");
                         Terminal.WriteLine("|", SeverityLevel.Info);
-                        Terminal.WriteLine("└── Minimum (Usermode) & Minimum (Kernel) are marked as they force the solutions to run silently.", SeverityLevel.Info);
-                        Terminal.WriteLine("    |── This means they do not show in the task bar.", SeverityLevel.Info);
-                        Terminal.WriteLine("    └── Essentially hides the solutions. Can cause issues if min-mode is chosen by accident.", SeverityLevel.Info);
+                        Terminal.WriteLine("|── Minimum (Usermode) & Minimum (Kernel) are marked as they force the solutions to run silently.", SeverityLevel.Info);
+                        Terminal.WriteLine("|    |── This means they do not show in the task bar.", SeverityLevel.Info);
+                        Terminal.WriteLine("|    └── Essentially hides the solutions. Can cause issues if min-mode is chosen by accident.", SeverityLevel.Info);
+                        Terminal.WriteLine("|", SeverityLevel.Info);
+                        Terminal.WriteLine("└── Edit config requires you have Visual Studio Code installed and 'code' added to your system PATH.", SeverityLevel.Info);
                         break;
                     case "clear":
                         Terminal.ClearTerminal();
@@ -291,6 +340,12 @@ namespace CustomTerminal
             Terminal.WriteLine("|   |──    3 = Minimum (Usermode)(!)", SeverityLevel.Warning);
             Terminal.WriteLine("|   └──    4 = Minimum (Kernel)(!)", SeverityLevel.Warning);
             Terminal.WriteLine("|", SeverityLevel.Info);
+            Terminal.WriteLine("|── Config", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── config: Grabs and prints your current raw config.", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── editconfig: Grabs your config and allows you to edit and reupload(!).", SeverityLevel.Warning);
+            Terminal.WriteLine("|   |── pushconfig: Pushes any changes made via editconfig to the cloud.", SeverityLevel.Info);
+            Terminal.WriteLine("|   └── resetconfig: Resets your config back to {}.", SeverityLevel.Info);
+            Terminal.WriteLine("|", SeverityLevel.Info);
             Terminal.WriteLine("└── Misc", SeverityLevel.Info);
             Terminal.WriteLine("    |── help: Display available commands and descriptions", SeverityLevel.Info);
             Terminal.WriteLine("    |── info: Shows info about all commands coloured in yellow(!)", SeverityLevel.Info);
@@ -312,15 +367,6 @@ namespace CustomTerminal
             // Validate the key format
             string pattern = @"^[A-Z]{4}-[A-Z]{4}-[A-Z]{4}-[A-Z]{4}$";
             return System.Text.RegularExpressions.Regex.IsMatch(key, pattern);
-        }
-
-        static bool IsValidAPIKey(string key)
-        {
-            // Local validation method
-            // Implement the logic to validate the API key locally
-            // ...
-
-            return true; // Placeholder for local validation
         }
 
         static string SendAPIRequest(string key, bool beautify, string cmd, string argName = null, string argVal = null)
@@ -369,6 +415,33 @@ namespace CustomTerminal
             }
 
             return null; // Return null in case of an error or unsuccessful request
+        }
+
+        static void ExecuteCommand(string command, string arguments)
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = command;
+            startInfo.Arguments = arguments;
+            startInfo.UseShellExecute = false;
+            startInfo.CreateNoWindow = true;
+
+            Process process = new Process();
+            process.StartInfo = startInfo;
+
+            process.Start();
+            process.WaitForExit();
+        }
+
+        static string RemoveHtmlTags(string input)
+        {
+            // Regular expression to remove <pre> and </pre> tags
+            string pattern = @"<\s*\/?\s*pre\s*[^>]*>";
+            string replacement = "";
+
+            // Remove HTML tags using Regex.Replace
+            string result = Regex.Replace(input, pattern, replacement);
+
+            return result;
         }
     }
 }

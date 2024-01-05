@@ -10,6 +10,7 @@
       "LucidTerm/1.0.0": {
         "dependencies": {
           "Costura.Fody": "5.7.0",
+          "Fody": "6.5.5",
           "Microsoft.NET.ILLink.Tasks": "8.0.0",
           "Newtonsoft.Json": "13.0.3",
           "runtimepack.Microsoft.NETCore.App.Runtime.win-x64": "8.0.0"
