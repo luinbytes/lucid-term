@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reflection.Metadata;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -99,10 +100,21 @@ namespace CustomTerminal
         static HttpClient httpClient = new HttpClient();
         static string apiKey = ""; // Global variable to store the validated key
         static bool debug = false;
+        static string VER = "v1.0.6";
 
         static async Task Main(string[] args)
         {
+            Console.Title = $"Lucid Term {VER}";
             string prefix = "[lucidTerm]";
+            bool isAdmin = IsUserAnAdmin();
+
+            //Paths
+            string con_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "constellation.bat");
+            string uni_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launch.bat");
+            string blender_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "blender.bat");
+            string inj_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "injector.bat");
+            string wh_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "whitehat.bat");
+            string para_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "parallax2.bat");
 
             if (!File.Exists("key.txt"))
             {
@@ -123,6 +135,7 @@ namespace CustomTerminal
             {
                 apiKey = File.ReadAllText("key.txt");
                 Terminal.WriteLine($"Welcome back!", SeverityLevel.Success);
+                Terminal.WriteLine($"Admin: {isAdmin}", SeverityLevel.Warning);
             }
 
             bool isRunning = true;
@@ -150,6 +163,187 @@ namespace CustomTerminal
                         else
                         {
                             Terminal.WriteLine("Invalid 'protection' command. Usage: protection [0-4]", SeverityLevel.Error);
+                        }
+                        break;
+                    case "launch":
+                        if (arguments.Count == 1 && int.TryParse(arguments[0], out int softwareType) && softwareType >= 0 && softwareType <= 6)
+                        {
+                            if (debug)
+                            {
+                                Terminal.WriteLine($"launching {softwareType.ToString()}...", SeverityLevel.Error);
+                            }
+                                //Universe
+                            if (softwareType == 0)
+                            {
+                                string download_url = "https://constelia.ai/launch.bat";
+                                using (HttpClient client = new HttpClient())
+                                {
+                                    var launchBatUrlResponse = await client.GetAsync(download_url);
+
+                                    if (launchBatUrlResponse.IsSuccessStatusCode)
+                                    {
+                                        var content = await launchBatUrlResponse.Content.ReadAsByteArrayAsync();
+                                        File.WriteAllBytes(uni_path, content);
+                                    }
+                                    else
+                                    {
+                                        Terminal.WriteLine($"Unable to download file from {download_url}", SeverityLevel.Error);
+                                        return;
+                                    }
+                                }
+                                if (File.Exists(uni_path))
+                                {
+                                    Process.Start("cmd.exe", $"/c start \"\" \"{uni_path}\"");
+                                }
+                                else
+                                {
+                                    Terminal.WriteLine("launch.bat does not exist.", SeverityLevel.Error);
+                                }
+                            }
+                            //Constellation
+                            if (softwareType == 1)
+                            {
+                                string download_url = "https://constelia.ai/constellation.bat";
+                                using (HttpClient client = new HttpClient())
+                                {
+                                    var launchBatUrlResponse = await client.GetAsync(download_url);
+
+                                    if (launchBatUrlResponse.IsSuccessStatusCode)
+                                    {
+                                        var content = await launchBatUrlResponse.Content.ReadAsByteArrayAsync();
+                                        File.WriteAllBytes(con_path, content);
+                                    }
+                                    else
+                                    {
+                                        Terminal.WriteLine($"Unable to download file from {download_url}", SeverityLevel.Error);
+                                        return;
+                                    }
+                                }
+                                if (File.Exists(con_path))
+                                {
+                                    Process.Start("cmd.exe", $"/c start \"\" \"{con_path}\"");
+                                }
+                                else
+                                {
+                                    Terminal.WriteLine("constellation.bat does not exist.", SeverityLevel.Error);
+                                }
+                            }
+                            //Blender
+                            if (softwareType == 2)
+                            {
+                                string download_url = "https://constelia.ai/blender.bat";
+                                using (HttpClient client = new HttpClient())
+                                {
+                                    var launchBatUrlResponse = await client.GetAsync(download_url);
+
+                                    if (launchBatUrlResponse.IsSuccessStatusCode)
+                                    {
+                                        var content = await launchBatUrlResponse.Content.ReadAsByteArrayAsync();
+                                        File.WriteAllBytes(blender_path, content);
+                                    }
+                                    else
+                                    {
+                                        Terminal.WriteLine($"Unable to download file from {download_url}", SeverityLevel.Error);
+                                        return;
+                                    }
+                                }
+                                if (File.Exists(blender_path))
+                                {
+                                    Process.Start("cmd.exe", $"/c start \"\" \"{blender_path}\"");
+                                }
+                                else
+                                {
+                                    Terminal.WriteLine("blender.bat does not exist.", SeverityLevel.Error);
+                                }
+                            }
+                            //Injector
+                            if (softwareType == 3)
+                            {
+                                string download_url = "https://constelia.ai/injector.bat";
+                                using (HttpClient client = new HttpClient())
+                                {
+                                    var launchBatUrlResponse = await client.GetAsync(download_url);
+
+                                    if (launchBatUrlResponse.IsSuccessStatusCode)
+                                    {
+                                        var content = await launchBatUrlResponse.Content.ReadAsByteArrayAsync();
+                                        File.WriteAllBytes(inj_path, content);
+                                    }
+                                    else
+                                    {
+                                        Terminal.WriteLine($"Unable to download file from {download_url}", SeverityLevel.Error);
+                                        return;
+                                    }
+                                }
+                                if (File.Exists(inj_path))
+                                {
+                                    Process.Start("cmd.exe", $"/c start \"\" \"{inj_path}\"");
+                                }
+                                else
+                                {
+                                    Terminal.WriteLine("injector.bat does not exist.", SeverityLevel.Error);
+                                }
+                            }
+                            //Whitehat
+                            if (softwareType == 4)
+                            {
+                                string download_url = "https://constelia.ai/whitehat.bat";
+                                using (HttpClient client = new HttpClient())
+                                {
+                                    var launchBatUrlResponse = await client.GetAsync(download_url);
+
+                                    if (launchBatUrlResponse.IsSuccessStatusCode)
+                                    {
+                                        var content = await launchBatUrlResponse.Content.ReadAsByteArrayAsync();
+                                        File.WriteAllBytes(wh_path, content);
+                                    }
+                                    else
+                                    {
+                                        Terminal.WriteLine($"Unable to download file from {download_url}", SeverityLevel.Error);
+                                        return;
+                                    }
+                                }
+                                if (File.Exists(wh_path))
+                                {
+                                    Process.Start("cmd.exe", $"/c start \"\" \"{wh_path}\"");
+                                }
+                                else
+                                {
+                                    Terminal.WriteLine("whitehat.bat does not exist.", SeverityLevel.Error);
+                                }
+                            }
+                            //Parallax2
+                            if (softwareType == 5)
+                            {
+                                string download_url = "https://constelia.ai/parallax2.bat";
+                                using (HttpClient client = new HttpClient())
+                                {
+                                    var launchBatUrlResponse = await client.GetAsync(download_url);
+
+                                    if (launchBatUrlResponse.IsSuccessStatusCode)
+                                    {
+                                        var content = await launchBatUrlResponse.Content.ReadAsByteArrayAsync();
+                                        File.WriteAllBytes(para_path, content);
+                                    }
+                                    else
+                                    {
+                                        Terminal.WriteLine($"Unable to download file from {download_url}", SeverityLevel.Error);
+                                        return;
+                                    }
+                                }
+                                if (File.Exists(para_path))
+                                {
+                                    Process.Start("cmd.exe", $"/c start \"\" \"{para_path}\"");
+                                }
+                                else
+                                {
+                                    Terminal.WriteLine("parallax2.bat does not exist.", SeverityLevel.Error);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Terminal.WriteLine("Invalid 'launch' command. Usage: protection [0-5]", SeverityLevel.Error);
                         }
                         break;
 
@@ -226,7 +420,6 @@ namespace CustomTerminal
                         }
                         break;
                     case "config":
-                        Terminal.WriteLine("Config editing is still in early access.", SeverityLevel.Info);
                         string viewConfigResponse = SendAPIRequest(apiKey, true, "getConfiguration");
                         if (viewConfigResponse != null)
                         {
@@ -235,7 +428,6 @@ namespace CustomTerminal
                         }
                         break;
                     case "editconfig":
-                        Terminal.WriteLine("Config editing is still in early access.", SeverityLevel.Warning);
                         string editConfigResponse = SendAPIRequest(apiKey, true, "getConfiguration");
                         if (editConfigResponse != null)
                         {
@@ -245,7 +437,6 @@ namespace CustomTerminal
                         }
                         break;
                     case "pushconfig":
-                        Terminal.WriteLine("Config editing is still in early access.", SeverityLevel.Warning);
                         if (File.Exists("config.json")) {
                             string pushConfigContents = File.ReadAllText("config.json");
                             //I know this is a weird way of doing this leave me alone.
@@ -338,7 +529,14 @@ namespace CustomTerminal
             Terminal.WriteLine("|   |──    1 = IPC/Zombie", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    2 = Kernel Mode Protection", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    3 = Minimum (Usermode)(!)", SeverityLevel.Warning);
-            Terminal.WriteLine("|   └──    4 = Minimum (Kernel)(!)", SeverityLevel.Warning);
+            Terminal.WriteLine("|   |──    4 = Minimum (Kernel)(!)", SeverityLevel.Warning);
+            Terminal.WriteLine("|   |── launch: Launch various solutions [0-6]", SeverityLevel.Info);
+            Terminal.WriteLine("|   |──    0 = Universe4", SeverityLevel.Info);
+            Terminal.WriteLine("|   |──    1 = Constellation4", SeverityLevel.Info);
+            Terminal.WriteLine("|   |──    2 = Blender", SeverityLevel.Info);
+            Terminal.WriteLine("|   |──    3 = Injector", SeverityLevel.Info);
+            Terminal.WriteLine("|   |──    4 = Whitehat", SeverityLevel.Info);
+            Terminal.WriteLine("|   └──    5 = Parallax2", SeverityLevel.Info);
             Terminal.WriteLine("|", SeverityLevel.Info);
             Terminal.WriteLine("|── Config", SeverityLevel.Info);
             Terminal.WriteLine("|   |── config: Grabs and prints your current raw config.", SeverityLevel.Info);
@@ -442,6 +640,14 @@ namespace CustomTerminal
             string result = Regex.Replace(input, pattern, replacement);
 
             return result;
+        }
+
+        static bool IsUserAnAdmin()
+        {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
     }
 }
