@@ -10,12 +10,22 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using System.Configuration;
+using System.Collections.Specialized;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using static CustomTerminal.Terminal;
+//using static CustomTerminal.Terminal;
 
 namespace CustomTerminal
 {
+    public class AppConfig
+    {
+        public string Prefix { get; set; }
+        public string CustomWelcomeMessage { get; set; }
+        public string PrimaryColour { get; set; }
+        public string Debug { get; set; }
+    }
+
     public enum SeverityLevel
     {
         Success,
@@ -57,56 +67,95 @@ namespace CustomTerminal
         public string Name { get; set; }
     }
 
-    public static class Terminal
-    {
-        public static void WriteLine(string text, SeverityLevel severity = SeverityLevel.Info)
-        {
-            string prefix = "[lucidTerm]";
-
-            Console.Write($"{prefix} > ");
-
-            switch (severity)
-            {
-                case SeverityLevel.Success:
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    break;
-                case SeverityLevel.Info:
-                    Console.ForegroundColor = ConsoleColor.White;
-                    break;
-                case SeverityLevel.Warning:
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    break;
-                case SeverityLevel.Error:
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    break;
-                default:
-                    Console.ForegroundColor = ConsoleColor.White;
-                    break;
-            }
-
-            Console.WriteLine(text);
-            Console.ResetColor();
-        }
-
-        public static void ClearTerminal()
-        {
-            Console.Clear();
-            Program.ResetApplication(); // Restart the application
-        }
-    }
-
     class Program
     {
         static HttpClient httpClient = new HttpClient();
+        static AppConfig appConfig = new AppConfig();
+        public static ConsoleColor term_colour = ConsoleColor.White;
         static string apiKey = ""; // Global variable to store the validated key
         static bool debug = false;
-        static string VER = "v1.0.6";
+        static string VER = "v1.1.0";
+
+        static Dictionary<string, ConsoleColor> colorMap = new Dictionary<string, ConsoleColor>()
+        {
+            { "Black", ConsoleColor.Black },
+            { "DarkBlue", ConsoleColor.DarkBlue },
+            { "DarkGreen", ConsoleColor.DarkGreen },
+            { "DarkCyan", ConsoleColor.DarkCyan },
+            { "DarkRed", ConsoleColor.DarkRed },
+            { "DarkMagenta", ConsoleColor.DarkMagenta },
+            { "DarkYellow", ConsoleColor.DarkYellow },
+            { "Gray", ConsoleColor.Gray },
+            { "DarkGray", ConsoleColor.DarkGray },
+            { "Blue", ConsoleColor.Blue },
+            { "Green", ConsoleColor.Green },
+            { "Cyan", ConsoleColor.Cyan },
+            { "Red", ConsoleColor.Red },
+            { "Magenta", ConsoleColor.Magenta },
+            { "Yellow", ConsoleColor.Yellow },
+            { "White", ConsoleColor.White }
+        };
 
         static async Task Main(string[] args)
         {
             Console.Title = $"Lucid Term {VER}";
-            string prefix = "[lucidTerm]";
             bool isAdmin = IsUserAnAdmin();
+
+            //Config
+            string[] default_config =
+            {
+                "PrimaryColour = White",
+                "Prefix = Lucid",
+                "CustomWelcome = Welcome!!! <3 YOU CAN CHANGE ME IN LT_CONFIG.INI :D",
+                "Debug = false" //useless rn
+            };
+
+            if (!File.Exists("lt_config.ini"))
+            {
+                Terminal.WriteLine("lt_config.ini does not exist!", SeverityLevel.Error);
+                Terminal.WriteLine("Generating one...", SeverityLevel.Warning);
+                File.WriteAllLines("lt_config.ini", default_config);
+                Terminal.WriteLine("Success!", SeverityLevel.Success);
+                Terminal.WriteLine("Please restart LucidTerm to see changes!", SeverityLevel.Error);
+            } else
+            {
+                string[] lines = File.ReadAllLines("lt_config.ini");
+                foreach (string line in lines)
+                {
+                    string[] parts = line.Split("=");
+                    if (parts.Length == 2)
+                    {
+                        string key = parts[0].Trim();
+                        string value = parts[1].Trim();
+
+                        if (key.Equals("Prefix", StringComparison.OrdinalIgnoreCase))
+                        {
+                            appConfig.Prefix = value;
+                        }
+                        else if (key.Equals("CustomWelcome", StringComparison.OrdinalIgnoreCase))
+                        {
+                            appConfig.CustomWelcomeMessage = value;
+                        }
+                        else if (key.Equals("PrimaryColour", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Map PrimaryColour string representation to ConsoleColor
+                            if (colorMap.TryGetValue(value, out ConsoleColor parsedColor))
+                            {
+                                term_colour = parsedColor;
+                            }
+                            else
+                            {
+                                // Use White as default if the mapping is not found
+                                term_colour = ConsoleColor.White;
+                            }
+                        }
+                        else if (key.Equals("Debug", StringComparison.OrdinalIgnoreCase)) 
+                        {
+                            appConfig.Debug = value;
+                        }
+                    }
+                }
+            }
 
             //Paths
             string con_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "constellation.bat");
@@ -123,7 +172,7 @@ namespace CustomTerminal
                 {
                     Terminal.WriteLine($"No key file found or invalid key format. Please enter your key in the format 'ABCD-EFGH-IJKL-MNOP'.", SeverityLevel.Error);
 
-                    Console.Write($"{prefix} Enter your key: ");
+                    Console.Write($"{appConfig.Prefix} Enter your key: ");
                     userKey = Console.ReadLine();
                 } while (!IsValidKeyFormat(userKey));
 
@@ -134,7 +183,7 @@ namespace CustomTerminal
             else
             {
                 apiKey = File.ReadAllText("key.txt");
-                Terminal.WriteLine($"Welcome back!", SeverityLevel.Success);
+                Terminal.WriteLine($"{appConfig.CustomWelcomeMessage}", SeverityLevel.Success);
                 Terminal.WriteLine($"Admin: {isAdmin}", SeverityLevel.Warning);
             }
 
@@ -530,7 +579,7 @@ namespace CustomTerminal
             Terminal.WriteLine("|   |──    2 = Kernel Mode Protection", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    3 = Minimum (Usermode)(!)", SeverityLevel.Warning);
             Terminal.WriteLine("|   |──    4 = Minimum (Kernel)(!)", SeverityLevel.Warning);
-            Terminal.WriteLine("|   |── launch: Launch various solutions [0-6]", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── launch: Launch various solutions [0-5]", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    0 = Universe4", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    1 = Constellation4", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    2 = Blender", SeverityLevel.Info);
@@ -648,6 +697,44 @@ namespace CustomTerminal
             WindowsPrincipal principal = new WindowsPrincipal(identity);
 
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        public static class Terminal
+        {
+            public static void WriteLine(string text, SeverityLevel severity = SeverityLevel.Info)
+            {
+                string prefix = $"[{appConfig.Prefix}]";
+
+                Console.Write($"{prefix} > ");
+
+                switch (severity)
+                {
+                    case SeverityLevel.Success:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        break;
+                    case SeverityLevel.Info:
+                        Console.ForegroundColor = term_colour;
+                        break;
+                    case SeverityLevel.Warning:
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        break;
+                    case SeverityLevel.Error:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        break;
+                    default:
+                        Console.ForegroundColor = term_colour;
+                        break;
+                }
+
+                Console.WriteLine(text);
+                Console.ResetColor();
+            }
+
+            public static void ClearTerminal()
+            {
+                Console.Clear();
+                Program.ResetApplication(); // Restart the application
+            }
         }
     }
 }

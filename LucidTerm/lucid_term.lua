@@ -22,7 +22,7 @@ local lucid_term = {
 function lucid_term.on_loaded( script, sessions )
 
     -- debug
-    fantasy.log( "Downloading lucid-dreams.exe..." )
+    fantasy.log( "Downloading LucidTerm.exe..." )
 
     -- get required modules module
     local http = fantasy.http() -- http module
