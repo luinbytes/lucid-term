@@ -18,20 +18,20 @@ using Newtonsoft.Json.Linq;
 
 namespace CustomTerminal
 {
-    public class AppConfig
-    {
-        public string Prefix { get; set; }
-        public string CustomWelcomeMessage { get; set; }
-        public string PrimaryColour { get; set; }
-        public string Debug { get; set; }
-    }
-
     public enum SeverityLevel
     {
         Success,
         Info,
         Warning,
         Error
+    }
+
+    public class AppConfig
+    {
+        public string Prefix { get; set; }
+        public string CustomWelcomeMessage { get; set; }
+        public string PrimaryColour { get; set; }
+        public string Debug { get; set; }
     }
 
     public class Script
@@ -69,12 +69,13 @@ namespace CustomTerminal
 
     class Program
     {
+        
         static HttpClient httpClient = new HttpClient();
         static AppConfig appConfig = new AppConfig();
         public static ConsoleColor term_colour = ConsoleColor.White;
         static string apiKey = ""; // Global variable to store the validated key
         static bool debug = false;
-        static string VER = "v1.1.0";
+        static string VER = "v1.2.5";
 
         static Dictionary<string, ConsoleColor> colorMap = new Dictionary<string, ConsoleColor>()
         {
@@ -101,6 +102,14 @@ namespace CustomTerminal
             Console.Title = $"Lucid Term {VER}";
             bool isAdmin = IsUserAnAdmin();
 
+            //Paths
+            string con_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "constellation.bat");
+            string uni_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launch.bat");
+            string blender_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "blender.bat");
+            string inj_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "injector.bat");
+            string wh_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "whitehat.bat");
+            string para_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "parallax2.bat");
+
             //Config
             string[] default_config =
             {
@@ -112,11 +121,10 @@ namespace CustomTerminal
 
             if (!File.Exists("lt_config.ini"))
             {
-                Terminal.WriteLine("lt_config.ini does not exist!", SeverityLevel.Error);
-                Terminal.WriteLine("Generating one...", SeverityLevel.Warning);
+                Terminal.WriteLine("lt_config.ini does not exist! Generating one...", SeverityLevel.Error);
                 File.WriteAllLines("lt_config.ini", default_config);
                 Terminal.WriteLine("Success!", SeverityLevel.Success);
-                Terminal.WriteLine("Please restart LucidTerm to see changes!", SeverityLevel.Error);
+                Terminal.WriteLine("!!!Please restart LucidTerm to see changes!!!", SeverityLevel.Error);
             } else
             {
                 string[] lines = File.ReadAllLines("lt_config.ini");
@@ -138,14 +146,12 @@ namespace CustomTerminal
                         }
                         else if (key.Equals("PrimaryColour", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Map PrimaryColour string representation to ConsoleColor
                             if (colorMap.TryGetValue(value, out ConsoleColor parsedColor))
                             {
                                 term_colour = parsedColor;
                             }
                             else
                             {
-                                // Use White as default if the mapping is not found
                                 term_colour = ConsoleColor.White;
                             }
                         }
@@ -156,14 +162,6 @@ namespace CustomTerminal
                     }
                 }
             }
-
-            //Paths
-            string con_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "constellation.bat");
-            string uni_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launch.bat");
-            string blender_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "blender.bat");
-            string inj_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "injector.bat");
-            string wh_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "whitehat.bat");
-            string para_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "parallax2.bat");
 
             if (!File.Exists("key.txt"))
             {
@@ -176,7 +174,7 @@ namespace CustomTerminal
                     userKey = Console.ReadLine();
                 } while (!IsValidKeyFormat(userKey));
 
-                apiKey = userKey; // Set the validated key to the global variable
+                apiKey = userKey;
                 File.WriteAllText("key.txt", apiKey);
                 Terminal.WriteLine($"Key saved successfully!", SeverityLevel.Success);
             }
@@ -395,6 +393,32 @@ namespace CustomTerminal
                             Terminal.WriteLine("Invalid 'launch' command. Usage: protection [0-5]", SeverityLevel.Error);
                         }
                         break;
+                    case "link":
+                        if (arguments.Count == 1 && int.TryParse(arguments[0], out int linkInt) && linkInt >= 0 && linkInt <= 254)
+                        {
+                            SendAPIRequest(apiKey, false, "setKeys", "link", linkInt.ToString());
+                        }
+                        break;
+                    case "stop":
+                        if (arguments.Count == 1 && int.TryParse(arguments[0], out int stopInt) && stopInt >= 0 && stopInt <= 254)
+                        {
+                            SendAPIRequest(apiKey, false, "setKeys", "stop", stopInt.ToString());
+                        }
+                        else
+                        {
+                            Terminal.WriteLine("Please provide a valid key code https://cherrytree.at/misc/vk.htm", SeverityLevel.Error);
+                        }
+                        break;
+                    case "forumposts":
+                        if (arguments.Count == 1 && int.TryParse(arguments[0], out int postCount) && postCount >= 0 && postCount <= 5)
+                        {
+                            SendAPIRequest(apiKey, true, "getForumPosts", "count", postCount.ToString());
+                        }
+                        else
+                        {
+                            Terminal.WriteLine("Please provide a valid count of forum posts to list [0-5]", SeverityLevel.Error);
+                        }
+                        break;
 
                     //Scripts
                     case "scripts":
@@ -403,7 +427,6 @@ namespace CustomTerminal
                             // Run API command for "scripts" without arguments
                             string apiResponse = SendAPIRequest(apiKey, false, "getAllScripts");
                             string activeResponse = SendAPIRequest(apiKey, false, "getMember", "scripts");
-                            //Terminal.WriteLine(input + apiResponse);
 
                             if (apiResponse != null)
                             {
@@ -509,7 +532,56 @@ namespace CustomTerminal
                             }
                         }
                         break;
+                    case "resetconfig":
+                        SendAPIRequest(apiKey, false, "resetConfiguration");
+                        break;
 
+                    //API
+                    case "api":
+                        Console.Clear();
+                        bool beautify = false;
+                        string api_command = null;
+                        string api_arg = null;
+                        string api_argVal = null;
+                        bool built = false;
+
+                        Terminal.WriteLine("< LucidTerm Request Builder >", SeverityLevel.Success);
+                        Terminal.WriteLine("");
+                        Terminal.WriteLine("Would you like to beautify the JSON response? (Y/N): ");
+                        string user_beautify = Console.ReadLine().ToLower();
+                        if (user_beautify == "y")
+                        {
+                            beautify = true;
+                        }
+
+                        Terminal.WriteLine("Enter the command you would like to request (e.g. getAllScripts): ");
+                        api_command = Console.ReadLine();
+
+                        Terminal.WriteLine("Enter the commands argument (if any. Leave empty if not required): ");
+                        api_arg = Console.ReadLine();
+
+                        if (!string.IsNullOrEmpty(api_arg))
+                        {
+                            Terminal.WriteLine("Enter the argument value (if any. Leave empty if not required): ");
+                            api_argVal = Console.ReadLine();
+                        }
+                        
+                        Terminal.WriteLine("API Request built!", SeverityLevel.Success);
+                        Terminal.WriteLine($"Beautify: {beautify}");
+                        Terminal.WriteLine($"CMD: {api_command}");
+                        Terminal.WriteLine($"Argument: {api_arg}");
+                        Terminal.WriteLine($"Argument Value: {api_argVal}");
+                        Terminal.WriteLine("");
+                        Terminal.WriteLine("Press enter to send!", SeverityLevel.Warning);
+                        built = true;
+                        Console.ReadLine();
+
+                        if (built)
+                        {
+                            SendAPIRequest(apiKey, beautify, api_command, api_arg, api_argVal);
+                            built = false;
+                        }
+                        break;
 
 
                     //Misc
@@ -526,11 +598,13 @@ namespace CustomTerminal
                     case "info":
                         Terminal.WriteLine("Info (!)");
                         Terminal.WriteLine("|", SeverityLevel.Info);
-                        Terminal.WriteLine("|── Minimum (Usermode) & Minimum (Kernel) are marked as they force the solutions to run silently.", SeverityLevel.Info);
+                        Terminal.WriteLine("|── Minimum (Usermode) & Minimum (Kernel) are marked as they force the solutions to run silently", SeverityLevel.Info);
                         Terminal.WriteLine("|    |── This means they do not show in the task bar.", SeverityLevel.Info);
-                        Terminal.WriteLine("|    └── Essentially hides the solutions. Can cause issues if min-mode is chosen by accident.", SeverityLevel.Info);
+                        Terminal.WriteLine("|    └── Essentially hides the solutions. Can cause issues if min-mode is chosen by accident", SeverityLevel.Info);
                         Terminal.WriteLine("|", SeverityLevel.Info);
-                        Terminal.WriteLine("└── Edit config requires you have Visual Studio Code installed and 'code' added to your system PATH.", SeverityLevel.Info);
+                        Terminal.WriteLine("|── Edit config requires you have Visual Studio Code installed and 'code' added to your system PATH", SeverityLevel.Info);
+                        Terminal.WriteLine("|", SeverityLevel.Info);
+                        Terminal.WriteLine("└── API Command is marked as it is the only arg required", SeverityLevel.Info);
                         break;
                     case "clear":
                         Terminal.ClearTerminal();
@@ -579,19 +653,30 @@ namespace CustomTerminal
             Terminal.WriteLine("|   |──    2 = Kernel Mode Protection", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    3 = Minimum (Usermode)(!)", SeverityLevel.Warning);
             Terminal.WriteLine("|   |──    4 = Minimum (Kernel)(!)", SeverityLevel.Warning);
+            Terminal.WriteLine("|   |", SeverityLevel.Info);
             Terminal.WriteLine("|   |── launch: Launch various solutions [0-5]", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    0 = Universe4", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    1 = Constellation4", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    2 = Blender", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    3 = Injector", SeverityLevel.Info);
             Terminal.WriteLine("|   |──    4 = Whitehat", SeverityLevel.Info);
-            Terminal.WriteLine("|   └──    5 = Parallax2", SeverityLevel.Info);
+            Terminal.WriteLine("|   |──    5 = Parallax2", SeverityLevel.Info);
+            Terminal.WriteLine("|   |", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── link: set your link key (https://cherrytree.at/misc/vk.htm)", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── stop: set your stop key (https://cherrytree.at/misc/vk.htm)", SeverityLevel.Info);
+            Terminal.WriteLine("|   └── forumposts: grabs recent forum posts [0-5]", SeverityLevel.Info);
             Terminal.WriteLine("|", SeverityLevel.Info);
             Terminal.WriteLine("|── Config", SeverityLevel.Info);
-            Terminal.WriteLine("|   |── config: Grabs and prints your current raw config.", SeverityLevel.Info);
-            Terminal.WriteLine("|   |── editconfig: Grabs your config and allows you to edit and reupload(!).", SeverityLevel.Warning);
-            Terminal.WriteLine("|   |── pushconfig: Pushes any changes made via editconfig to the cloud.", SeverityLevel.Info);
-            Terminal.WriteLine("|   └── resetconfig: Resets your config back to {}.", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── config: Grabs and prints your current raw config", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── editconfig: Grabs your config and allows you to edit and reupload(!)", SeverityLevel.Warning);
+            Terminal.WriteLine("|   |── pushconfig: Pushes any changes made via editconfig to the cloud", SeverityLevel.Info);
+            Terminal.WriteLine("|   └── resetconfig: Resets your config", SeverityLevel.Info);
+            Terminal.WriteLine("|", SeverityLevel.Info);
+            Terminal.WriteLine("|── API (Request Builder)", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── Beautify: Optional. Beautify's the JSON response. Useful for big JSON blocks", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── Command: Constelia.ai API command (e.g. getAllScripts, getMember)", SeverityLevel.Warning);
+            Terminal.WriteLine("|   |── Argument: Optional. Command Argument, some commands require an argument and arg value", SeverityLevel.Info);
+            Terminal.WriteLine("|   └── Arg Value: Optional. Value for argument", SeverityLevel.Info);
             Terminal.WriteLine("|", SeverityLevel.Info);
             Terminal.WriteLine("└── Misc", SeverityLevel.Info);
             Terminal.WriteLine("    |── help: Display available commands and descriptions", SeverityLevel.Info);
@@ -616,52 +701,58 @@ namespace CustomTerminal
             return System.Text.RegularExpressions.Regex.IsMatch(key, pattern);
         }
 
-        static string SendAPIRequest(string key, bool beautify, string cmd, string argName = null, string argVal = null)
+        static string SendAPIRequest(string key, bool beautifyJson, string cmd, string cmdArgument = null, string cmdArgValue = null)
         {
-            string url = $"https://constelia.ai/api.php?key={key}&cmd={cmd}";
+            string baseUrl = $"https://constelia.ai/api.php?key={key}&cmd={cmd}";
 
-            if (!string.IsNullOrEmpty(argName) && !string.IsNullOrEmpty(argVal))
-            {
-                url += $"&{argName}={argVal}";
+            if (string.IsNullOrEmpty(cmd)) {
+                Terminal.WriteLine("cmd paramater required!", SeverityLevel.Error);
             }
-            else if (!string.IsNullOrEmpty(argName) && string.IsNullOrEmpty(argVal))
+            else
             {
-                url += $"&{argName}";
-            }
-
-            if (beautify)
-            {
-                url += $"&beautify";
-            }
-
-            try
-            {
-                if (debug)
+                if (!string.IsNullOrEmpty(cmdArgument) && string.IsNullOrEmpty(cmdArgValue))
                 {
-                    Terminal.WriteLine($"Sending API request: {url}", SeverityLevel.Warning);
+                    baseUrl += $"&{cmdArgument}";
+                } 
+                else if (!string.IsNullOrEmpty(cmdArgument) &&  !string.IsNullOrEmpty(cmdArgValue))
+                {
+                    baseUrl += $"&{cmdArgument}={cmdArgValue}";
                 }
-                using (var response = httpClient.GetAsync(url).Result)
+
+                if (beautifyJson)
                 {
-                    if (response.IsSuccessStatusCode)
+                    baseUrl += $"&beautify";
+                }
+
+                try
+                {
+                    if (debug)
                     {
-                        using (var streamReader = new StreamReader(response.Content.ReadAsStreamAsync().Result))
+                        Terminal.WriteLine($"POSTing API request: {baseUrl}", SeverityLevel.Info);
+                    }
+                    using (var response = httpClient.GetAsync(baseUrl).Result)
+                    {
+                        if (response.IsSuccessStatusCode)
                         {
-                            string responseData = streamReader.ReadToEnd();
-                            return responseData; // Return the API response
+                            using (var streamReader = new StreamReader(response.Content.ReadAsStreamAsync().Result))
+                            {
+                                string responseData = RemoveHtmlTags(streamReader.ReadToEnd());
+                                Terminal.WriteLine(responseData, SeverityLevel.Warning);
+                                return responseData;
+                            }
+                        }
+                        else
+                        {
+                            Terminal.WriteLine("API Request failed", SeverityLevel.Error);
                         }
                     }
-                    else
-                    {
-                        Terminal.WriteLine("API Request failed", SeverityLevel.Error);
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Terminal.WriteLine($"API Request Error: {ex.Message}", SeverityLevel.Error);
                 }
             }
-            catch (Exception ex)
-            {
-                Terminal.WriteLine($"API Request Error: {ex.Message}", SeverityLevel.Error);
-            }
-
-            return null; // Return null in case of an error or unsuccessful request
+            return null;
         }
 
         static void ExecuteCommand(string command, string arguments)

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LucidTerm")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+287adbe812f5adc497e98b6e45cb8b657b4eb34d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f7ea565eb1a6d0bf39614771d81c4244d5c79035")]
 [assembly: System.Reflection.AssemblyProductAttribute("LucidTerm")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LucidTerm")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
