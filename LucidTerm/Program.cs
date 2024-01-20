@@ -75,7 +75,7 @@ namespace CustomTerminal
         public static ConsoleColor term_colour = ConsoleColor.White;
         static string apiKey = ""; // Global variable to store the validated key
         static bool debug = false;
-        static string VER = "v1.2.5";
+        static string VER = "v1.2.7";
 
         static Dictionary<string, ConsoleColor> colorMap = new Dictionary<string, ConsoleColor>()
         {
@@ -181,8 +181,14 @@ namespace CustomTerminal
             else
             {
                 apiKey = File.ReadAllText("key.txt");
-                Terminal.WriteLine($"{appConfig.CustomWelcomeMessage}", SeverityLevel.Success);
-                Terminal.WriteLine($"Admin: {isAdmin}", SeverityLevel.Warning);
+                Terminal.WriteLine($"{appConfig.CustomWelcomeMessage}", SeverityLevel.Info);
+                if (isAdmin)
+                {
+                    Terminal.WriteLine($"Admin: {isAdmin}. Can launch solutions in kernel mode.", SeverityLevel.Success);
+                } else
+                {
+                    Terminal.WriteLine($"Admin: {isAdmin}. Cannot launch solutions in kernel mode.", SeverityLevel.Warning);
+                }
             }
 
             bool isRunning = true;
@@ -204,7 +210,7 @@ namespace CustomTerminal
                     case "protection":
                         if (arguments.Count == 1 && int.TryParse(arguments[0], out int protectionLevel) && protectionLevel >= 0 && protectionLevel <= 4)
                         {
-                            Terminal.WriteLine(SendAPIRequest(apiKey, false, "setProtection", "protection", protectionLevel.ToString()), SeverityLevel.Success);
+                            SendAPIRequest(true, apiKey, false, "setProtection", "protection", protectionLevel.ToString());
 
                         }
                         else
@@ -396,13 +402,13 @@ namespace CustomTerminal
                     case "link":
                         if (arguments.Count == 1 && int.TryParse(arguments[0], out int linkInt) && linkInt >= 0 && linkInt <= 254)
                         {
-                            SendAPIRequest(apiKey, false, "setKeys", "link", linkInt.ToString());
+                            SendAPIRequest(true, apiKey, false, "setKeys", "link", linkInt.ToString());
                         }
                         break;
                     case "stop":
                         if (arguments.Count == 1 && int.TryParse(arguments[0], out int stopInt) && stopInt >= 0 && stopInt <= 254)
                         {
-                            SendAPIRequest(apiKey, false, "setKeys", "stop", stopInt.ToString());
+                            SendAPIRequest(true, apiKey, false, "setKeys", "stop", stopInt.ToString());
                         }
                         else
                         {
@@ -412,7 +418,7 @@ namespace CustomTerminal
                     case "forumposts":
                         if (arguments.Count == 1 && int.TryParse(arguments[0], out int postCount) && postCount >= 0 && postCount <= 5)
                         {
-                            SendAPIRequest(apiKey, true, "getForumPosts", "count", postCount.ToString());
+                            SendAPIRequest(true, apiKey, true, "getForumPosts", "count", postCount.ToString());
                         }
                         else
                         {
@@ -425,8 +431,8 @@ namespace CustomTerminal
                         if (arguments.Count == 0)
                         {
                             // Run API command for "scripts" without arguments
-                            string apiResponse = SendAPIRequest(apiKey, false, "getAllScripts");
-                            string activeResponse = SendAPIRequest(apiKey, false, "getMember", "scripts");
+                            string apiResponse = SendAPIRequest(false, apiKey, false, "getAllScripts");
+                            string activeResponse = SendAPIRequest(false, apiKey, false, "getMember", "scripts");
 
                             if (apiResponse != null)
                             {
@@ -481,7 +487,7 @@ namespace CustomTerminal
                         {
                             // Logic for when the argument is provided by the user
                             string userArg = arguments[0]; // Placeholder for user-provided argument
-                            string userApiResponse = SendAPIRequest(apiKey, false, "toggleScriptStatus", "id", userArg);
+                            string userApiResponse = SendAPIRequest(false, apiKey, false, "toggleScriptStatus", "id", userArg);
 
                             Terminal.WriteLine($"Toggling script ID: {userArg}", SeverityLevel.Warning);
                             // Add your logic using the user-provided argument here
@@ -492,7 +498,7 @@ namespace CustomTerminal
                         }
                         break;
                     case "config":
-                        string viewConfigResponse = SendAPIRequest(apiKey, true, "getConfiguration");
+                        string viewConfigResponse = SendAPIRequest(false, apiKey, true, "getConfiguration");
                         if (viewConfigResponse != null)
                         {
                             string cleanJson = RemoveHtmlTags(viewConfigResponse);
@@ -500,7 +506,7 @@ namespace CustomTerminal
                         }
                         break;
                     case "editconfig":
-                        string editConfigResponse = SendAPIRequest(apiKey, true, "getConfiguration");
+                        string editConfigResponse = SendAPIRequest(false, apiKey, true, "getConfiguration");
                         if (editConfigResponse != null)
                         {
                             string cleanJson = RemoveHtmlTags(editConfigResponse);
@@ -533,7 +539,7 @@ namespace CustomTerminal
                         }
                         break;
                     case "resetconfig":
-                        SendAPIRequest(apiKey, false, "resetConfiguration");
+                        SendAPIRequest(true, apiKey, false, "resetConfiguration");
                         break;
 
                     //API
@@ -578,7 +584,7 @@ namespace CustomTerminal
 
                         if (built)
                         {
-                            SendAPIRequest(apiKey, beautify, api_command, api_arg, api_argVal);
+                            SendAPIRequest(true, apiKey, beautify, api_command, api_arg, api_argVal);
                             built = false;
                         }
                         break;
@@ -604,6 +610,8 @@ namespace CustomTerminal
                         Terminal.WriteLine("|", SeverityLevel.Info);
                         Terminal.WriteLine("|── Edit config requires you have Visual Studio Code installed and 'code' added to your system PATH", SeverityLevel.Info);
                         Terminal.WriteLine("|", SeverityLevel.Info);
+                        Terminal.WriteLine("|── constelia is marked as you need the perk 'Bond Between Human and AI'", SeverityLevel.Info);
+                        Terminal.WriteLine("|", SeverityLevel.Info);
                         Terminal.WriteLine("└── API Command is marked as it is the only arg required", SeverityLevel.Info);
                         break;
                     case "clear":
@@ -611,7 +619,7 @@ namespace CustomTerminal
                         break;
 
                     case "allsoftware":
-                        string softwareResponse = SendAPIRequest(apiKey, false, "getAllSoftware");
+                        string softwareResponse = SendAPIRequest(false, apiKey, false, "getAllSoftware");
                         if (softwareResponse != null)
                         {
                             List<software> softwareList = JsonConvert.DeserializeObject<List<software>>(softwareResponse);
@@ -626,6 +634,9 @@ namespace CustomTerminal
                             // Handle null response
                             Terminal.WriteLine("Failed to fetch software. Check API response.", SeverityLevel.Error);
                         }
+                        break;
+                    case "constelia":
+                        //W.I.P.
                         break;
 
                     //Cmd not found
@@ -683,6 +694,7 @@ namespace CustomTerminal
             Terminal.WriteLine("    |── info: Shows info about all commands coloured in yellow(!)", SeverityLevel.Info);
             Terminal.WriteLine("    |── debug: Enables verbose logging straight to the terminal", SeverityLevel.Info);
             Terminal.WriteLine("    |── allsoftware: Shows information on all available software", SeverityLevel.Info);
+            Terminal.WriteLine("    |── constelia: Ask constelia! (!)", SeverityLevel.Warning);
             Terminal.WriteLine("    |── exit: Exit the terminal", SeverityLevel.Info);
             Terminal.WriteLine("    └── clear: Clear the terminal", SeverityLevel.Info);
             // Add other available commands and descriptions here
@@ -701,7 +713,7 @@ namespace CustomTerminal
             return System.Text.RegularExpressions.Regex.IsMatch(key, pattern);
         }
 
-        static string SendAPIRequest(string key, bool beautifyJson, string cmd, string cmdArgument = null, string cmdArgValue = null)
+        static string SendAPIRequest(bool print, string key, bool beautifyJson, string cmd, string cmdArgument = null, string cmdArgValue = null)
         {
             string baseUrl = $"https://constelia.ai/api.php?key={key}&cmd={cmd}";
 
@@ -737,7 +749,10 @@ namespace CustomTerminal
                             using (var streamReader = new StreamReader(response.Content.ReadAsStreamAsync().Result))
                             {
                                 string responseData = RemoveHtmlTags(streamReader.ReadToEnd());
-                                Terminal.WriteLine(responseData, SeverityLevel.Warning);
+                                if (print)
+                                {
+                                    Terminal.WriteLine(responseData, SeverityLevel.Warning);
+                                }
                                 return responseData;
                             }
                         }
