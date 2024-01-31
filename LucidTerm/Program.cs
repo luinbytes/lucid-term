@@ -109,6 +109,7 @@ namespace CustomTerminal
             string inj_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "injector.bat");
             string wh_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "whitehat.bat");
             string para_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "parallax2.bat");
+            string script_profiles_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory + "/lt_script_profiles/");
 
             //Config
             string[] default_config =
@@ -119,6 +120,7 @@ namespace CustomTerminal
                 "Debug = false" //useless rn
             };
 
+            //Check if config exists
             if (!File.Exists("lt_config.ini"))
             {
                 Terminal.WriteLine("lt_config.ini does not exist! Generating one...", SeverityLevel.Error);
@@ -160,6 +162,22 @@ namespace CustomTerminal
                             appConfig.Debug = value;
                         }
                     }
+                }
+            }
+
+            //Check if script profiles dir exists. If not, make one.
+            if (!Directory.Exists(script_profiles_path))
+            {
+                Directory.CreateDirectory(script_profiles_path);
+                if (debug)
+                {
+                    Terminal.WriteLine("Script Profiles (lt_script_profiles) dir created.");
+                }
+            } else
+            {
+                if (debug)
+                {
+                    Terminal.WriteLine("Script Profiles dir exists... Skipping.");
                 }
             }
 
@@ -542,6 +560,48 @@ namespace CustomTerminal
                         SendAPIRequest(true, apiKey, false, "resetConfiguration");
                         break;
 
+                    //Script Profiles
+                    case "createprofile":
+                        if (arguments.Count >= 2)
+                        {
+                            string profileName = arguments[0];
+                            List<int> scriptIds = new List<int>();
+
+                            // Parsing script ids
+                            for (int i = 1; i < arguments.Count; i++)
+                            {
+                                if (int.TryParse(arguments[i], out int id))
+                                {
+                                    scriptIds.Add(id);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Invalid script ID: {arguments[i]}");
+                                    return; // Exit the command if any invalid ID is encountered
+                                }
+                            }
+
+                            // Create the profile
+                            CreateProfile(profileName, scriptIds);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid arguments for creating a profile.");
+                        }
+                        break;
+                    case "readprofile":
+                        if (arguments.Count == 1)
+                        {
+                            string profileName = arguments[0];
+                            ReadProfile(profileName);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid arguments for reading a profile.");
+                        }
+                        break;
+
+
                     //API
                     case "api":
                         Console.Clear();
@@ -803,6 +863,85 @@ namespace CustomTerminal
             WindowsPrincipal principal = new WindowsPrincipal(identity);
 
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        static void CreateProfile(string profileName, List<int> scriptIds)
+        {
+            string script_profiles_path = Path.Combine(Directory.GetCurrentDirectory(), "lt_script_profiles");
+            string profileFilePath = Path.Combine(script_profiles_path, $"{profileName}.ini");
+            if (debug)
+            {
+                Terminal.WriteLine($"Writing Script Profile {profileName}.ini to {profileFilePath}...");
+            }
+
+            using (StreamWriter writer = new StreamWriter(profileFilePath))
+            {
+                writer.WriteLine("[Profile]");
+                writer.WriteLine($"Name={profileName}");
+
+                writer.WriteLine("[ScriptIDs]");
+                foreach (int id in scriptIds)
+                {
+                    writer.WriteLine($"ID={id}");
+                }
+            }
+            if (debug)
+            {
+                Terminal.WriteLine("Finished writing profile.");
+            }
+        }
+
+        static void ReadProfile(string profileName)
+        {
+            // Directory path for profiles
+            string profilesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "lt_script_profiles");
+
+            // File path for the profile INI
+            string profileFilePath = Path.Combine(profilesDirectory, $"{profileName}.ini");
+
+            // Check if the profile INI file exists
+            if (!File.Exists(profileFilePath))
+            {
+                Console.WriteLine($"Profile '{profileName}' does not exist.");
+                return;
+            }
+
+            // Read profile information from the INI file
+            Dictionary<string, List<int>> profileData = new Dictionary<string, List<int>>();
+            string currentSection = "";
+
+            using (StreamReader reader = new StreamReader(profileFilePath))
+            {
+                while (!reader.EndOfStream)
+                {
+                    string line = reader.ReadLine();
+
+                    if (line.StartsWith("["))
+                    {
+                        currentSection = line.Trim('[', ']');
+                        profileData[currentSection] = new List<int>();
+                    }
+                    else if (!string.IsNullOrWhiteSpace(currentSection) && line.Contains("="))
+                    {
+                        string[] parts = line.Split('=');
+                        if (parts.Length == 2 && parts[0].Trim() == "ID" && int.TryParse(parts[1].Trim(), out int id))
+                        {
+                            profileData[currentSection].Add(id);
+                        }
+                    }
+                }
+            }
+
+            // Display profile information
+            Terminal.WriteLine($"Profile '{profileName}' information:", SeverityLevel.Success);
+            foreach (KeyValuePair<string, List<int>> section in profileData)
+            {
+                Terminal.WriteLine($"[{section.Key}]");
+                foreach (int id in section.Value)
+                {
+                    Terminal.WriteLine($"ID={id}");
+                }
+            }
         }
 
         public static class Terminal
