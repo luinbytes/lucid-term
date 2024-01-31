@@ -14,6 +14,7 @@ using System.Configuration;
 using System.Collections.Specialized;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Linq;
 //using static CustomTerminal.Terminal;
 
 namespace CustomTerminal
@@ -75,7 +76,7 @@ namespace CustomTerminal
         public static ConsoleColor term_colour = ConsoleColor.White;
         static string apiKey = ""; // Global variable to store the validated key
         static bool debug = false;
-        static string VER = "v1.2.7";
+        static string VER = "v1.4.0";
 
         static Dictionary<string, ConsoleColor> colorMap = new Dictionary<string, ConsoleColor>()
         {
@@ -600,6 +601,13 @@ namespace CustomTerminal
                             Console.WriteLine("Invalid arguments for reading a profile.");
                         }
                         break;
+                    case "setprofile":
+                        if (arguments.Count == 1)
+                        {
+                            string profileName = arguments[0];
+                            SyncProfileScripts(profileName);
+                        }
+                        break;
 
 
                     //API
@@ -697,6 +705,9 @@ namespace CustomTerminal
                         break;
                     case "constelia":
                         //W.I.P.
+                        break;
+                    case "roll":
+                        SendAPIRequest(true, apiKey, true, "rollLoot");
                         break;
 
                     //Cmd not found
@@ -943,6 +954,147 @@ namespace CustomTerminal
                 }
             }
         }
+
+        static void SyncProfileScripts(string profileName)
+        {
+            using (HttpClient httpClient = new HttpClient())
+            {
+                string baseUrl = "https://constelia.ai/api.php";
+                baseUrl += $"?key={apiKey}";
+
+                try
+                {
+                    // Run API command to get all available scripts
+                    HttpResponseMessage allScriptsResponse = httpClient.GetAsync($"{baseUrl}&cmd=getAllScripts").Result;
+                    allScriptsResponse.EnsureSuccessStatusCode();
+                    string allScriptsContent = allScriptsResponse.Content.ReadAsStringAsync().Result;
+
+                    // Run API command to get currently enabled scripts
+                    HttpResponseMessage activeResponse = httpClient.GetAsync($"{baseUrl}&cmd=getMember&scripts").Result;
+                    activeResponse.EnsureSuccessStatusCode();
+                    string activeContent = activeResponse.Content.ReadAsStringAsync().Result;
+
+                    List<Script> allScripts = JsonConvert.DeserializeObject<List<Script>>(allScriptsContent);
+                    ApiResponse activeApiResponse = JsonConvert.DeserializeObject<ApiResponse>(activeContent);
+                    List<Script> activeScripts = activeApiResponse.Scripts;
+
+                    List<int> profileScriptIds = GetProfileScriptIds(profileName);
+
+                    // Enable/disable scripts based on profileScriptIds and activeScripts
+                    foreach (var script in allScripts)
+                    {
+                        bool isActive = profileScriptIds.Contains(Int32.Parse(script.id));
+                        bool currentlyEnabled = activeScripts.Any(activeScript => activeScript.id == script.id);
+
+                        if ((isActive && !currentlyEnabled) || (!isActive && currentlyEnabled))
+                        {
+                            string toggleUrl = $"{baseUrl}&cmd=toggleScriptStatus&id={script.id}";
+                            HttpResponseMessage toggleResponse = httpClient.GetAsync(toggleUrl).Result;
+                            toggleResponse.EnsureSuccessStatusCode();
+
+                            if (debug)
+                            {
+                                Terminal.WriteLine($"Toggled script with ID: {script.id}");
+                            }
+                        }
+                    }
+
+                    Terminal.WriteLine($"<{profileName}> Script sync complete.");
+                }
+                catch (HttpRequestException ex)
+                {
+                    Terminal.WriteLine($"HTTP Request Error: {ex.Message}", SeverityLevel.Error);
+                }
+                catch (Exception ex)
+                {
+                    Terminal.WriteLine($"Error: {ex.Message}", SeverityLevel.Error);
+                }
+            }
+        }
+
+        static List<int> GetProfileScriptIds(string profileName)
+        {
+            List<int> profileScriptIds = new List<int>();
+
+            // Example: Read script IDs from an INI file
+            string profilesDirectory = Path.Combine(Directory.GetCurrentDirectory(), "lt_script_profiles");
+            string profileFilePath = Path.Combine(profilesDirectory, $"{profileName}.ini");
+
+            if (File.Exists(profileFilePath))
+            {
+                try
+                {
+                    if (debug)
+                    {
+                        Terminal.WriteLine($"Reading profile file: {profileFilePath}");
+                    }
+
+                    // Read all lines from the INI file
+                    string[] lines = File.ReadAllLines(profileFilePath);
+
+                    bool isProfileSection = false;
+                    bool isScriptIDsSection = false;
+
+                    // Iterate through each line in the file
+                    foreach (string line in lines)
+                    {
+                        if (debug)
+                        {
+                            Terminal.WriteLine($"Reading line: {line}");
+                        }
+
+                        // Check if the line starts with "[Profile]"
+                        if (line.Trim().StartsWith("[Profile", StringComparison.OrdinalIgnoreCase))
+                        {
+                            isProfileSection = true;
+                        }
+                        else if (isProfileSection)
+                        {
+                            // Check if the line starts with "[ScriptIDs]" or contains it
+                            if (line.Trim().StartsWith("[ScriptIDs", StringComparison.OrdinalIgnoreCase) ||
+                                line.Trim().Equals("[ScriptIDs]", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Start reading script IDs
+                                isScriptIDsSection = true;
+                                isProfileSection = false; // Exit profile section
+                            }
+                        }
+                        else if (isScriptIDsSection)
+                        {
+                            if (debug)
+                            {
+                                Terminal.WriteLine("Parsing script ID...");
+                            }
+
+                            // Parse the script ID from the line and add it to the list
+                            if (int.TryParse(line.Trim().Replace("ID=", ""), out int scriptId))
+                            {
+                                if (debug)
+                                {
+                                    Terminal.WriteLine($"Found script ID: {scriptId}", SeverityLevel.Success);
+                                }
+                                profileScriptIds.Add(scriptId);
+                            }
+                            else
+                            {
+                                Terminal.WriteLine($"Invalid script ID format: {line}", SeverityLevel.Error);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Terminal.WriteLine($"Error reading profile file: {ex.Message}", SeverityLevel.Error);
+                }
+            }
+            else
+            {
+                Terminal.WriteLine($"Profile '{profileName}' does not exist.", SeverityLevel.Error);
+            }
+
+            return profileScriptIds;
+        }
+
 
         public static class Terminal
         {
