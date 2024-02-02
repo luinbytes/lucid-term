@@ -76,7 +76,7 @@ namespace CustomTerminal
         public static ConsoleColor term_colour = ConsoleColor.White;
         static string apiKey = ""; // Global variable to store the validated key
         static bool debug = false;
-        static string VER = "v1.4.0";
+        static string VER = "v1.4.5";
 
         static Dictionary<string, ConsoleColor> colorMap = new Dictionary<string, ConsoleColor>()
         {
@@ -704,7 +704,14 @@ namespace CustomTerminal
                         }
                         break;
                     case "constelia":
-                        //W.I.P.
+                        if (arguments.Count >= 1)
+                        {
+                            string text = string.Join(" ", arguments);
+                            SendAPIRequest(true, apiKey, true, "heyConstelia", "message", text);
+                        }
+                        break;
+                    case "teachconstelia":
+                        //WIP
                         break;
                     case "roll":
                         SendAPIRequest(true, apiKey, true, "rollLoot");
@@ -754,9 +761,14 @@ namespace CustomTerminal
             Terminal.WriteLine("|   |── pushconfig: Pushes any changes made via editconfig to the cloud", SeverityLevel.Info);
             Terminal.WriteLine("|   └── resetconfig: Resets your config", SeverityLevel.Info);
             Terminal.WriteLine("|", SeverityLevel.Info);
+            Terminal.WriteLine("|── Script Profiles", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── createprofile [profile_name] [scriptids]: Creates a new script profile (ex: createprofile main 142 146 180)", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── setprofile [profile_name]: Enables the chosen profile", SeverityLevel.Info);
+            Terminal.WriteLine("|   └── readprofile [profile_name]: Prints profile data", SeverityLevel.Info);
+            Terminal.WriteLine("|", SeverityLevel.Info);
             Terminal.WriteLine("|── API (Request Builder)", SeverityLevel.Info);
             Terminal.WriteLine("|   |── Beautify: Optional. Beautify's the JSON response. Useful for big JSON blocks", SeverityLevel.Info);
-            Terminal.WriteLine("|   |── Command: Constelia.ai API command (e.g. getAllScripts, getMember)", SeverityLevel.Warning);
+            Terminal.WriteLine("|   |── Command: Constelia.ai API command (e.g. getAllScripts, getMember)(!)", SeverityLevel.Warning);
             Terminal.WriteLine("|   |── Argument: Optional. Command Argument, some commands require an argument and arg value", SeverityLevel.Info);
             Terminal.WriteLine("|   └── Arg Value: Optional. Value for argument", SeverityLevel.Info);
             Terminal.WriteLine("|", SeverityLevel.Info);
@@ -765,6 +777,7 @@ namespace CustomTerminal
             Terminal.WriteLine("    |── info: Shows info about all commands coloured in yellow(!)", SeverityLevel.Info);
             Terminal.WriteLine("    |── debug: Enables verbose logging straight to the terminal", SeverityLevel.Info);
             Terminal.WriteLine("    |── allsoftware: Shows information on all available software", SeverityLevel.Info);
+            Terminal.WriteLine("    |── roll: Rolls Abundance of Jupiter", SeverityLevel.Info);
             Terminal.WriteLine("    |── constelia: Ask constelia! (!)", SeverityLevel.Warning);
             Terminal.WriteLine("    |── exit: Exit the terminal", SeverityLevel.Info);
             Terminal.WriteLine("    └── clear: Clear the terminal", SeverityLevel.Info);
