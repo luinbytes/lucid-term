@@ -21,5 +21,5 @@ Make sure you have Visual Studio Code installed and added to your system PATH.
 
 ## Screenshots
 
-![App Screenshot](https://i.imgur.com/tX6sDYX.png)
+![App Screenshot](https://i.ibb.co/q9hGjzv/image.png)
 
