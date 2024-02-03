@@ -76,7 +76,7 @@ namespace CustomTerminal
         public static ConsoleColor term_colour = ConsoleColor.White;
         static string apiKey = ""; // Global variable to store the validated key
         static bool debug = false;
-        static string VER = "v1.4.5";
+        static string VER = "v1.4.9";
 
         static Dictionary<string, ConsoleColor> colorMap = new Dictionary<string, ConsoleColor>()
         {
@@ -516,6 +516,44 @@ namespace CustomTerminal
                             Terminal.WriteLine("Invalid 'scripts' command. Usage: scripts [number]", SeverityLevel.Error);
                         }
                         break;
+                    case "activescripts":
+                        string allScriptsResponse = SendAPIRequest(false, apiKey, false, "getAllScripts");
+                        string activeScriptsResponse = SendAPIRequest(false, apiKey, false, "getMember", "scripts");
+
+                        if (allScriptsResponse != null)
+                        {
+                            // Deserialize the API response into a list of Script objects
+                            List<Script> allScripts = JsonConvert.DeserializeObject<List<Script>>(allScriptsResponse);
+                            ApiResponse activeScriptsApiResponse = JsonConvert.DeserializeObject<ApiResponse>(activeScriptsResponse);
+                            List<Script> activeScripts = activeScriptsApiResponse.Scripts;
+
+                            // Display the active scripts in a tabulated format
+                            Console.WriteLine($"| {"Name",-30} | {"ID",-10} | {"Last Update",-25} | {"Author",-20} | {"Active",-7} |", SeverityLevel.Info);
+                            Console.WriteLine($"| {"",-30} | {"",-10} | {"",-25} | {"",-20} | {"",-7} |", SeverityLevel.Info);
+
+                            foreach (var activeScript in activeScripts)
+                            {
+                                // Find the corresponding script in the list of all scripts
+                                Script matchingScript = allScripts.FirstOrDefault(s => s.id == activeScript.id);
+                                if (matchingScript != null)
+                                {
+                                    string formattedLastUpdate = DateTimeOffset.FromUnixTimeSeconds(long.Parse(matchingScript.last_update)).DateTime.ToString();
+
+                                    // Truncate the script name if it exceeds 25 characters
+                                    string truncatedName = matchingScript.name.Length > 25 ? matchingScript.name.Substring(0, 22) + "..." : matchingScript.name;
+
+                                    // Display the active script details
+                                    Console.WriteLine($"| {truncatedName,-30} | {matchingScript.id,-10} | {formattedLastUpdate,-25} | {matchingScript.author,-20} | {"Active",-7} |", SeverityLevel.Info);
+                                }
+                            }
+
+                            Console.WriteLine("|", SeverityLevel.Info);
+                        }
+                        else
+                        {
+                            Terminal.WriteLine("Failed to fetch scripts. Check API response.", SeverityLevel.Error);
+                        }
+                        break;
                     case "config":
                         string viewConfigResponse = SendAPIRequest(false, apiKey, true, "getConfiguration");
                         if (viewConfigResponse != null)
@@ -707,7 +745,7 @@ namespace CustomTerminal
                         if (arguments.Count >= 1)
                         {
                             string text = string.Join(" ", arguments);
-                            SendAPIRequest(true, apiKey, true, "heyConstelia", "message", text);
+                            SendAPIRequest(true, apiKey, false, "heyConstelia", "message", text);
                         }
                         break;
                     case "teachconstelia":
@@ -753,6 +791,9 @@ namespace CustomTerminal
             Terminal.WriteLine("|   |", SeverityLevel.Info);
             Terminal.WriteLine("|   |── link: set your link key (https://cherrytree.at/misc/vk.htm)", SeverityLevel.Info);
             Terminal.WriteLine("|   |── stop: set your stop key (https://cherrytree.at/misc/vk.htm)", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── scripts: List all scripts", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── activescripts: List active scripts", SeverityLevel.Info);
+            Terminal.WriteLine("|   |── roll: Rolls Abundance of Jupiter", SeverityLevel.Info);
             Terminal.WriteLine("|   └── forumposts: grabs recent forum posts [0-5]", SeverityLevel.Info);
             Terminal.WriteLine("|", SeverityLevel.Info);
             Terminal.WriteLine("|── Config", SeverityLevel.Info);
@@ -777,7 +818,6 @@ namespace CustomTerminal
             Terminal.WriteLine("    |── info: Shows info about all commands coloured in yellow(!)", SeverityLevel.Info);
             Terminal.WriteLine("    |── debug: Enables verbose logging straight to the terminal", SeverityLevel.Info);
             Terminal.WriteLine("    |── allsoftware: Shows information on all available software", SeverityLevel.Info);
-            Terminal.WriteLine("    |── roll: Rolls Abundance of Jupiter", SeverityLevel.Info);
             Terminal.WriteLine("    |── constelia: Ask constelia! (!)", SeverityLevel.Warning);
             Terminal.WriteLine("    |── exit: Exit the terminal", SeverityLevel.Info);
             Terminal.WriteLine("    └── clear: Clear the terminal", SeverityLevel.Info);
@@ -833,9 +873,34 @@ namespace CustomTerminal
                             using (var streamReader = new StreamReader(response.Content.ReadAsStreamAsync().Result))
                             {
                                 string responseData = RemoveHtmlTags(streamReader.ReadToEnd());
-                                if (print)
+                                dynamic responseObject = JsonConvert.DeserializeObject(responseData);
+
+                                if (responseObject is JArray)
                                 {
-                                    Terminal.WriteLine(responseData, SeverityLevel.Warning);
+                                    // Iterate through each object in the array
+                                    foreach (var item in responseObject)
+                                    {
+                                        // Check if the object has a "message" property
+                                        if (item["message"] != null)
+                                        {
+                                            string message = item["message"].ToString();
+                                            Terminal.WriteLine(message, SeverityLevel.Warning);
+                                        }
+                                    }
+                                }
+                                else if (responseObject != null && responseObject.message != null)
+                                {
+                                    // Check if the response is a single object with a "message" property
+                                    string message = responseObject.message;
+                                    Terminal.WriteLine(message, SeverityLevel.Warning);
+                                }
+                                else
+                                {
+                                    // If "message" doesn't exist, print the entire response data
+                                    if (print)
+                                    {
+                                        Terminal.WriteLine(responseData, SeverityLevel.Warning);
+                                    }
                                 }
                                 return responseData;
                             }
