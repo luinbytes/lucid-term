@@ -33,6 +33,7 @@ namespace CustomTerminal
         public string CustomWelcomeMessage { get; set; }
         public string PrimaryColour { get; set; }
         public string Debug { get; set; }
+        public string Exe { get; set; }
     }
 
     public class Script
@@ -76,7 +77,7 @@ namespace CustomTerminal
         public static ConsoleColor term_colour = ConsoleColor.White;
         static string apiKey = ""; // Global variable to store the validated key
         static bool debug = false;
-        static string VER = "v1.4.9";
+        static string VER = "v1.4.9.2";
 
         static Dictionary<string, ConsoleColor> colorMap = new Dictionary<string, ConsoleColor>()
         {
@@ -100,8 +101,17 @@ namespace CustomTerminal
 
         static async Task Main(string[] args)
         {
+            //I broke something so hopefully this will help
+            if (!File.Exists("LT_DEBUGLOG (delete me if nothing wrong).txt"))
+            {
+                File.CreateText("LT_DEBUGLOG (delete me if nothing wrong).txt");
+                WriteToDebugLog("Debug log creation!");
+            }
+            WriteToDebugLog("[APP LAUNCH]");
+
             Console.Title = $"Lucid Term {VER}";
             bool isAdmin = IsUserAnAdmin();
+            WriteToDebugLog("!!App title and Admin check finished!!");
 
             //Paths
             string con_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "constellation.bat");
@@ -111,6 +121,7 @@ namespace CustomTerminal
             string wh_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "whitehat.bat");
             string para_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "parallax2.bat");
             string script_profiles_path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory + "/lt_script_profiles/");
+            WriteToDebugLog("!!Path setup finished!!");
 
             //Config
             string[] default_config =
@@ -118,6 +129,7 @@ namespace CustomTerminal
                 "PrimaryColour = White",
                 "Prefix = Lucid",
                 "CustomWelcome = Welcome!!! <3 YOU CAN CHANGE ME IN LT_CONFIG.INI :D",
+                "code-exe = code",
                 "Debug = false" //useless rn
             };
 
@@ -162,25 +174,33 @@ namespace CustomTerminal
                         {
                             appConfig.Debug = value;
                         }
+                        else if (key.Equals("code-exe", StringComparison.OrdinalIgnoreCase))
+                        {
+                            appConfig.Exe = value;
+                        }
                     }
                 }
             }
+            WriteToDebugLog("!!appConfig setup finished!!");
 
             //Check if script profiles dir exists. If not, make one.
             if (!Directory.Exists(script_profiles_path))
             {
                 Directory.CreateDirectory(script_profiles_path);
+                WriteToDebugLog("Created script profiles dir...");
                 if (debug)
                 {
                     Terminal.WriteLine("Script Profiles (lt_script_profiles) dir created.");
                 }
             } else
             {
+                WriteToDebugLog("Script profiles dir exists. Skipping...");
                 if (debug)
                 {
                     Terminal.WriteLine("Script Profiles dir exists... Skipping.");
                 }
             }
+            WriteToDebugLog("!!Script profiles dir check finished!!");
 
             if (!File.Exists("key.txt"))
             {
@@ -188,6 +208,7 @@ namespace CustomTerminal
                 do
                 {
                     Terminal.WriteLine($"No key file found or invalid key format. Please enter your key in the format 'ABCD-EFGH-IJKL-MNOP'.", SeverityLevel.Error);
+                    WriteToDebugLog("Invalid key format in user key.txt");
 
                     Console.Write($"{appConfig.Prefix} Enter your key: ");
                     userKey = Console.ReadLine();
@@ -196,6 +217,7 @@ namespace CustomTerminal
                 apiKey = userKey;
                 File.WriteAllText("key.txt", apiKey);
                 Terminal.WriteLine($"Key saved successfully!", SeverityLevel.Success);
+                WriteToDebugLog("Key valid... Moving on.");
             }
             else
             {
@@ -204,14 +226,17 @@ namespace CustomTerminal
                 if (isAdmin)
                 {
                     Terminal.WriteLine($"Admin: {isAdmin}. Can launch solutions in kernel mode.", SeverityLevel.Success);
+                    WriteToDebugLog("Admin : true");
                 } else
                 {
                     Terminal.WriteLine($"Admin: {isAdmin}. Cannot launch solutions in kernel mode.", SeverityLevel.Warning);
+                    WriteToDebugLog("Admin : false");
                 }
             }
 
             bool isRunning = true;
             Terminal.WriteLine($"Type 'help' for a list of available commands.", SeverityLevel.Info);
+            WriteToDebugLog("\n! [Init complete] !");
 
             while (isRunning)
             {
@@ -558,8 +583,15 @@ namespace CustomTerminal
                         string viewConfigResponse = SendAPIRequest(false, apiKey, true, "getConfiguration");
                         if (viewConfigResponse != null)
                         {
-                            string cleanJson = RemoveHtmlTags(viewConfigResponse);
-                            Terminal.WriteLine(cleanJson, SeverityLevel.Info);
+                            if (viewConfigResponse.StartsWith("<"))
+                            {
+                                string cleanJson = RemoveHtmlTags(viewConfigResponse);
+                                Terminal.WriteLine(cleanJson, SeverityLevel.Info);
+                            } 
+                            else 
+                            {
+                                Terminal.WriteLine(viewConfigResponse, SeverityLevel.Info);
+                            }
                         }
                         break;
                     case "editconfig":
@@ -1171,6 +1203,18 @@ namespace CustomTerminal
             }
 
             return profileScriptIds;
+        }
+
+        static void WriteToDebugLog(string input)
+        {
+            string timestamp = DateTime.Now.ToString("[dd/MM/yy HH:mm:ss]");
+            string logEntry = $"{timestamp} {input}";
+
+            // Write to the log file
+            using (StreamWriter writer = File.AppendText("LT_DEBUGLOG (delete me if nothing wrong).txt"))
+            {
+                writer.WriteLine(logEntry);
+            }
         }
 
 
